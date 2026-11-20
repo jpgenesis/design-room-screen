@@ -1,0 +1,15 @@
+{
+  "studios": [
+    { "name": "San Carlos", "tz": "America/Los_Angeles" },
+    { "name": "London", "tz": "Europe/London" },
+    { "name": "Paris", "tz": "Europe/Paris" },
+    { "name": "Singapore", "tz": "Asia/Singapore", "note": "Opening soon" }
+  ],
+  "priorities": [
+    { "area": "UX", "text": "Design system across every product" },
+    { "area": "Product", "text": "Fleet Management Platform, phase 1" },
+    { "area": "Brand", "text": "genesis.ai fixes: type, footer, favicon" }
+  ],
+  "images": [],
+  "imageEveryHours": 24
+}

@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="robots" content="noindex, nofollow">
+<title>Design Room</title>
+<style>
+html, body { margin: 0; height: 100%; background: #F6F7F7; color-scheme: light; }
+body > .dash { position: fixed; inset: 0; }
+/* Layout: one stage that fills its box. Wide box (Safari on HomeView) = two columns; square box (mirrored) = stacked. */
+.dash {
+  --paper: #F6F7F7; --ink: #121617; --muted: #5E686B; --line: rgba(18,22,23,.10);
+  --navy: #1D2037; --overlap: #6F8FD8; --glass: rgba(246,247,247,.84);
+  --font: "Scto Grotesk A", "Scto Grotesk", -apple-system, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  container-type: size; position: relative; overflow: hidden;
+  background: #DCDEDC; color: var(--ink); font-family: var(--font); font-weight: 400;
+  -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums;
+}
+.dash .bg { position: absolute; inset: 0; background-size: cover; background-position: center; transition: opacity 1.2s ease; }
+.dash .bg canvas { width: 100%; height: 100%; display: block; }
+.dash .shift { position: absolute; inset: 0; transition: transform 2s ease; }
+.dash .panel {
+  position: absolute; inset: 4cqmin; border-radius: 3.4cqmin; background: var(--glass);
+  -webkit-backdrop-filter: blur(24px) saturate(1.1); backdrop-filter: blur(24px) saturate(1.1);
+  padding: 5cqmin; display: grid; gap: 4cqmin;
+  grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; box-sizing: border-box;
+}
+.dash .credit { position: absolute; right: 5.5cqmin; bottom: 1cqmin; font-size: 1.7cqmin; color: rgba(255,255,255,.9); text-shadow: 0 0 6px rgba(0,0,0,.35); white-space: nowrap; max-width: 80%; overflow: hidden; text-overflow: ellipsis; }
+
+.dash .now { display: flex; justify-content: space-between; align-items: flex-end; gap: 3cqmin; }
+.dash .clock { font-size: 15cqmin; font-weight: 300; line-height: .9; letter-spacing: -.03em; }
+.dash .date { font-size: 3.6cqmin; margin-top: 1.6cqmin; }
+.dash .wx { text-align: right; }
+.dash .temp { font-size: 8cqmin; font-weight: 300; line-height: 1; letter-spacing: -.02em; }
+.dash .temp small { font-size: 3cqmin; color: var(--muted); letter-spacing: 0; margin-left: .6cqmin; }
+.dash .cond { font-size: 3cqmin; color: var(--muted); margin-top: 1cqmin; white-space: nowrap; }
+
+.dash .lab { font-size: 2.4cqmin; font-weight: 500; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.dash .studios { display: flex; flex-direction: column; gap: 2.2cqmin; min-height: 0; }
+.dash .srow { display: grid; grid-template-columns: 1fr auto; row-gap: .9cqmin; align-items: baseline; }
+.dash .srow .n { font-size: 3.3cqmin; }
+.dash .srow .n em { font-style: normal; color: var(--muted); font-size: 2.5cqmin; margin-left: 1cqmin; }
+.dash .srow .t { font-size: 3.3cqmin; font-weight: 500; }
+.dash .srow .t em { font-style: normal; font-weight: 400; color: var(--muted); font-size: 2.5cqmin; margin-right: 1cqmin; }
+.dash .trk { grid-column: 1 / -1; position: relative; height: 1.2cqmin; border-radius: 1cqmin; background: var(--line); }
+.dash .trk i { position: absolute; top: 0; bottom: 0; border-radius: 1cqmin; background: rgba(29,32,55,.38); }
+.dash .trk i.ov { background: var(--overlap); }
+.dash .trk i.home { background: var(--navy); }
+.dash .axis { position: relative; height: 2.4cqmin; font-size: 1.9cqmin; color: var(--muted); }
+.dash .axis span { position: absolute; transform: translateX(-50%); }
+.dash .axis span:first-child { transform: none; }
+.dash .axis span:last-child { transform: translateX(-100%); }
+.dash .tracks { position: relative; display: flex; flex-direction: column; gap: 2.2cqmin; }
+.dash .trk b.nowtick { position: absolute; top: -.9cqmin; bottom: -.9cqmin; width: .45cqmin; margin-left: -.22cqmin; background: var(--ink); border-radius: 1px; }
+.dash .overlap { font-size: 2.6cqmin; color: var(--muted); line-height: 1.35; }
+.dash .overlap b { font-weight: 500; color: var(--ink); }
+.dash .key i { display: inline-block; width: 2cqmin; height: 1.2cqmin; border-radius: 1cqmin; background: var(--overlap); margin-right: .8cqmin; vertical-align: middle; }
+
+.dash .prio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3cqmin; border-top: 1px solid var(--line); padding-top: 3cqmin; }
+.dash .prio .k { font-size: 2.4cqmin; font-weight: 500; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.dash .prio .v { font-size: 3.2cqmin; line-height: 1.22; margin-top: 1cqmin; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.dash .prio .head { grid-column: 1 / -1; margin-bottom: -1.5cqmin; }
+
+/* Wide box: Safari on HomeView reports a short viewport (448 by 364). */
+@container (min-aspect-ratio: 11/10) {
+  .dash .panel { grid-template-columns: 1.05fr 1fr; grid-template-rows: auto 1fr; column-gap: 5cqmin; row-gap: 3.5cqmin; }
+  .dash .now { grid-column: 1; grid-row: 1; flex-direction: column; align-items: flex-start; gap: 2.4cqmin; }
+  .dash .wx { text-align: left; display: flex; align-items: baseline; gap: 2cqmin; }
+  .dash .cond { margin-top: 0; }
+  .dash .clock { font-size: 17cqmin; }
+  .dash .studios { grid-column: 2; grid-row: 1 / span 2; justify-content: center; }
+  .dash .prio { grid-column: 1; grid-row: 2; grid-template-columns: 1fr; gap: 2.2cqmin; align-content: end; }
+  .dash .prio .head { display: none; }
+  .dash .prio > div:not(.head) { display: grid; grid-template-columns: 11cqmin 1fr; align-items: baseline; }
+  .dash .prio .v { margin-top: 0; -webkit-line-clamp: 2; }
+}
+@media (prefers-reduced-motion: reduce) { .dash .bg, .dash .shift { transition: none; } }
+
+</style>
+</head>
+<body data-device>
+<div class="dash"><div class="bg"></div><div class="shift"><div class="panel"></div><div class="credit"></div></div></div>
+<script>
+/* Design Room dashboard. Edit room.json to change priorities and images. */
+(function () {
+  var HOME = 'America/Los_Angeles';
+  var DEFAULTS = {
+    studios: [
+      { name: 'San Carlos', tz: 'America/Los_Angeles' },
+      { name: 'London', tz: 'Europe/London' },
+      { name: 'Paris', tz: 'Europe/Paris' }
+    ],
+    workday: [9, 18],
+    weather: { lat: 37.5072, lon: -122.2605, place: 'San Carlos' },
+    priorities: [
+      { area: 'UX', text: 'Design system across every product' },
+      { area: 'Product', text: 'Fleet Management Platform, phase 1' },
+      { area: 'Brand', text: 'genesis.ai fixes: type, footer, favicon' }
+    ],
+    images: [],
+    imageEveryHours: 24
+  };
+  var SAMPLE_WX = { f: 58, text: 'Partly sunny', hi: 63, lo: 47, sample: true };
+  var cfg = DEFAULTS, wx = null;
+
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function parts(tz, d) {
+    var o = {};
+    new Intl.DateTimeFormat('en-GB', { timeZone: tz, hourCycle: 'h23', hour: '2-digit', minute: '2-digit', weekday: 'short' })
+      .formatToParts(d).forEach(function (p) { o[p.type] = p.value; });
+    o.h = parseInt(o.hour, 10) + parseInt(o.minute, 10) / 60;
+    return o;
+  }
+  function hhmm(h) { h = ((h % 24) + 24) % 24; var H = Math.floor(h), M = Math.round((h - H) * 60); if (M === 60) { H++; M = 0; } return String(H % 24).padStart(2, '0') + ':' + String(M).padStart(2, '0'); }
+  function weekend(day) { return day === 'Sat' || day === 'Sun'; }
+  function segs(a, len) { a = ((a % 24) + 24) % 24; var b = a + len; return b > 24 ? [[a, 24], [0, b - 24]] : [[a, b]]; }
+  function inter(x, y) { var out = []; x.forEach(function (p) { y.forEach(function (q) { var s = Math.max(p[0], q[0]), e = Math.min(p[1], q[1]); if (e > s) out.push([s, e]); }); }); return out; }
+
+  function studiosBlock(now) {
+    var home = parts(HOME, now), wd = cfg.workday, len = wd[1] - wd[0];
+    var box = el('div', 'studios');
+    box.appendChild(el('div', 'lab', 'Studios, San Carlos time'));
+    var tracks = el('div', 'tracks');
+    var homeSeg = [[wd[0], wd[1]]];
+    var lines = [];
+    cfg.studios.forEach(function (s, i) {
+      var p = parts(s.tz, now);
+      var diff = Math.round(((((p.h - home.h) % 24) + 24) % 24) * 4) / 4;
+      if (diff > 12) diff -= 24;
+      var start = wd[0] - diff;
+      var mine = segs(start, len);
+      var row = el('div', 'srow');
+      var n = el('span', 'n', s.name); if (s.note) n.appendChild(el('em', null, s.note));
+      var t = el('span', 't'); if (p.weekday !== home.weekday) t.appendChild(el('em', null, p.weekday)); t.appendChild(document.createTextNode(p.hour + ':' + p.minute));
+      row.appendChild(n); row.appendChild(t);
+      var trk = el('div', 'trk');
+      var ov = i === 0 ? [] : inter(mine, homeSeg);
+      mine.forEach(function (r) { var b = el('i', i === 0 ? 'home' : ''); b.style.left = r[0] / 24 * 100 + '%'; b.style.width = (r[1] - r[0]) / 24 * 100 + '%'; trk.appendChild(b); });
+      var homeWeekend = weekend(home.weekday);
+      ov.forEach(function (r) {
+        var localDay = parts(s.tz, new Date(now.getTime() + (r[0] - home.h) * 3600000)).weekday;
+        if (homeWeekend || weekend(localDay)) return;
+        var b = el('i', 'ov'); b.style.left = r[0] / 24 * 100 + '%'; b.style.width = (r[1] - r[0]) / 24 * 100 + '%'; trk.appendChild(b);
+        lines.push([s.name, r]);
+      });
+      var nk = el('b', 'nowtick'); nk.style.left = home.h / 24 * 100 + '%'; trk.appendChild(nk);
+      row.appendChild(trk);
+      tracks.appendChild(row);
+    });
+    var axis = el('div', 'axis');
+    [0, 6, 12, 18, 24].forEach(function (h) { var a = el('span', null, h === 24 ? '24' : String(h).padStart(2, '0')); a.style.left = h / 24 * 100 + '%'; axis.appendChild(a); });
+    tracks.appendChild(axis);
+    box.appendChild(tracks);
+    var ovText = el('div', 'overlap');
+    var key = el('span', 'key'); key.appendChild(el('i')); key.appendChild(document.createTextNode('Shared hours with San Carlos: '));
+    ovText.appendChild(key);
+    var bits = lines.filter(function (l) { return l[1]; });
+    if (!bits.length) ovText.appendChild(document.createTextNode('none today.'));
+    bits.forEach(function (l, j) {
+      ovText.appendChild(el('b', null, l[0]));
+      ovText.appendChild(document.createTextNode(' ' + hhmm(l[1][0]) + ' to ' + hhmm(l[1][1]) + (j < bits.length - 1 ? ', ' : '.')));
+    });
+    box.appendChild(ovText);
+    return box;
+  }
+
+  function render(root) {
+    var now = new Date();
+    var panel = root.querySelector('.panel');
+    panel.textContent = '';
+    var home = parts(HOME, now);
+    var top = el('div', 'now');
+    var left = el('div');
+    left.appendChild(el('div', 'clock', home.hour + ':' + home.minute));
+    left.appendChild(el('div', 'date', new Intl.DateTimeFormat('en-GB', { timeZone: HOME, weekday: 'long', day: 'numeric', month: 'long' }).format(now)));
+    top.appendChild(left);
+    var w = wx || SAMPLE_WX, r = el('div', 'wx');
+    var temp = el('div', 'temp', w.f + '°'); temp.appendChild(el('small', null, 'F, ' + Math.round((w.f - 32) * 5 / 9) + '°C'));
+    r.appendChild(temp);
+    r.appendChild(el('div', 'cond', w.text + (w.hi != null ? ', high ' + w.hi + '°, low ' + w.lo + '°' : '')));
+    top.appendChild(r);
+    panel.appendChild(top);
+    panel.appendChild(studiosBlock(now));
+    var pr = el('div', 'prio');
+    pr.appendChild(el('div', 'lab head', 'Design team priorities'));
+    cfg.priorities.slice(0, 3).forEach(function (p) {
+      var d = el('div'); d.appendChild(el('div', 'k', p.area)); d.appendChild(el('div', 'v', p.text)); pr.appendChild(d);
+    });
+    panel.appendChild(pr);
+  }
+
+  function sampleImage(bg) {
+    var c = document.createElement('canvas'), W = 900, H = 900; c.width = W; c.height = H;
+    var g = c.getContext('2d');
+    var lg = g.createLinearGradient(0, 0, W, H); lg.addColorStop(0, '#E8E4DC'); lg.addColorStop(.55, '#C9CCC6'); lg.addColorStop(1, '#8E979A');
+    g.fillStyle = lg; g.fillRect(0, 0, W, H);
+    g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(W * .72, H * .3, W * .26, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(60,66,70,.35)'; g.fillRect(W * .08, H * .52, W * .34, H * .48);
+    g.fillStyle = 'rgba(29,32,55,.22)'; g.fillRect(W * .42, H * .64, W * .5, H * .36);
+    bg.appendChild(c);
+  }
+  function setImage(root) {
+    var bg = root.querySelector('.bg'), credit = root.querySelector('.credit');
+    var imgs = cfg.images || [];
+    if (!imgs.length) { if (!bg.firstChild) sampleImage(bg); credit.textContent = 'Sample image. Your inspiration image goes here.'; return; }
+    var slot = Math.floor(Date.now() / (cfg.imageEveryHours * 3600000)) % imgs.length;
+    var im = imgs[slot];
+    bg.textContent = ''; bg.style.backgroundImage = 'url("' + im.src + '")';
+    credit.textContent = im.credit || '';
+  }
+
+  function loadConfig() {
+    return fetch('room.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) { var c = {}; Object.keys(DEFAULTS).forEach(function (k) { c[k] = j[k] != null ? j[k] : DEFAULTS[k]; }); cfg = c; })
+      .catch(function () { cfg = DEFAULTS; });
+  }
+  function loadWeather() {
+    var p = cfg.weather;
+    function get(u) { return fetch(u).then(function (r) { if (!r.ok) throw 0; return r.json(); }); }
+    return get('https://api.weather.gov/points/' + p.lat + ',' + p.lon).then(function (pt) {
+      return Promise.all([get(pt.properties.forecast), get(pt.properties.forecastHourly)]);
+    }).then(function (res) {
+      var ps = res[0].properties.periods, a = ps[0], b = ps[1] || a;
+      var n = res[1].properties.periods[0];
+      wx = { f: n.temperature, text: n.shortForecast, hi: a.isDaytime ? a.temperature : b.temperature, lo: a.isDaytime ? b.temperature : a.temperature };
+    }).catch(function () { /* keep the last reading, or the sample in a preview */ });
+  }
+
+  function start() {
+    var roots = Array.prototype.slice.call(document.querySelectorAll('.dash'));
+    function all() { roots.forEach(render); }
+    function imgs() { roots.forEach(setImage); }
+    loadConfig().then(function () { imgs(); all(); return loadWeather(); }).then(all);
+    setInterval(all, 20000);
+    setInterval(function () { loadConfig().then(loadWeather).then(function () { imgs(); all(); }); }, 15 * 60000);
+    var k = 0;
+    setInterval(function () { k = (k + 1) % 4; var dx = [0, 3, 3, 0][k], dy = [0, 0, 3, 3][k];
+      roots.forEach(function (r) { r.querySelector('.shift').style.transform = 'translate(' + dx + 'px,' + dy + 'px)'; }); }, 4 * 60000);
+    if (document.body.hasAttribute('data-device')) {
+      setTimeout(function () { location.reload(); }, 6 * 3600000);
+      try { navigator.wakeLock && navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {}
+      document.addEventListener('visibilitychange', function () { try { if (!document.hidden && navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {} });
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+
+</script>
+</body>
+</html>
